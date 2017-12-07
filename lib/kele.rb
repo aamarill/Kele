@@ -18,7 +18,6 @@ class Kele
 		@auth_token = response["auth_token"]
 	end
 
-
 	def get_me
 		url = "#{@base_url}/users/me"
 
@@ -27,4 +26,15 @@ class Kele
 		user_data_hash = JSON.parse(response.body)
 	end
 
+	def get_mentor_availability
+		user_data_hash = get_me
+
+		mentor_id = user_data_hash["current_enrollment"]["mentor_id"]
+
+		url = "#{@base_url}/mentors/#{mentor_id}/student_availability"
+
+		response = self.class.get(url, headers: { "authorization" => @auth_token })
+
+		mentor_availability = JSON.parse(response.body)
+	end
 end
