@@ -148,6 +148,7 @@ class Kele
     }
 
     response = self.class.post(url,options)
+    mentor_availability = JSON.parse(response.body)
   end
 
 end
