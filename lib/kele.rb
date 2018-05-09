@@ -7,12 +7,15 @@ class Kele
   include Roadmap
 
   def initialize(email, password)
-    email, password = email, password
+    @email, password = email, password
 
     @base_url = "https://www.bloc.io/api/v1"
 
     options = {
-    body: { email: email, password: password }
+      body: {
+        email: email,
+        password: password
+      }
     }
 
     response = self.class.post("#{@base_url}/sessions", options)
@@ -22,8 +25,13 @@ class Kele
 
   def get_me
     url = "#{@base_url}/users/me"
+    options = {
+      headers: {
+        authorization: @auth_token
+      }
+    }
 
-    response = self.class.get(url, headers: { "authorization" => @auth_token })
+    response = self.class.get(url, options)
 
     user_data_hash = JSON.parse(response.body)
   end
@@ -35,9 +43,90 @@ class Kele
 
     url = "#{@base_url}/mentors/#{mentor_id}/student_availability"
 
-    response = self.class.get(url, headers: { "authorization" => @auth_token })
+    options = {
+      headers: {
+        authorization: @auth_token
+      }
+    }
+
+    response = self.class.get(url, options)
 
     mentor_availability = JSON.parse(response.body)
   end
 
+  def get_messages(page = nil)
+    url = "#{@base_url}/message_threads"
+
+    if page
+
+      options =  {
+        body: {
+          page: page
+        },
+        headers: {
+         authorization: @auth_token
+        }
+      }
+
+      response = self.class.get(url, options)
+      return messages_from_page = JSON.parse(response.body)
+    end
+
+    total_messages = get_messages(1)["count"]
+    messages_per_page = 10
+    number_of_pages = (total_messages / messages_per_page.to_f).ceil
+    all_messages = []
+    page = 1
+
+    number_of_pages.times do
+      options =  {
+        body: {
+          page: page
+        },
+        headers: {
+         authorization: @auth_token
+        }
+      }
+      response = self.class.get(url, options)
+      messages_from_page = JSON.parse(response.body)
+      all_messages << messages_from_page
+      page +=1
+    end
+
+    all_messages
+  end
+
+  def create_message(recipient_id, stripped_text, token=nil, subject=nil)
+
+    url = "#{@base_url}/messages"
+    options = {
+      body: {
+        sender: @email,
+        recipient_id: recipient_id,
+        token: token,
+        subject: subject,
+        "stripped-text" => stripped_text
+      },
+      headers: {
+        authorization: @auth_token
+      }
+    }
+
+    if token == nil
+      options = {
+        body: {
+          sender: @email,
+          recipient_id: recipient_id,
+          subject: subject,
+          "stripped-text" => stripped_text #syntax help!
+        },
+        headers: {
+          authorization: @auth_token
+        }
+      }
+
+    end
+
+    response = self.class.post(url,options)
+  end
 end
